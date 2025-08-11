@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String?
+  password   String
+  role       Role     @default(CONTRACTOR)
+  company    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  projects   Project[]
+}
+model Project {
+  id           String      @id @default(uuid())
+  name         String
+  clientName   String
+  contractType ContractType
+  mainOption   MainOption
+  startDate    DateTime
+  endDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owner        User     @relation(fields: [ownerId], references: [id])
+  ownerId      String
+  notices      Notice[]
+  earlyWarnings EarlyWarning[]
+  compensationEvents CompensationEvent[]
+  activities   Activity[]
+  costEntries  CostEntry[]
+}
+model EarlyWarning {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  title       String
+  description String
+  status      EWStatus @default(OPEN)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  dueMeeting  DateTime?
+  closedAt    DateTime?
+}
+model CompensationEvent {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  title       String
+  description String
+  status      CEStatus @default(NOTIFIED)
+  cause       String?
+  notifiedAt  DateTime @default(now())
+  quoteAmount Float?
+  quoteTimeImpact Int?
+  decision    CEDecision?
+  decisionAt  DateTime?
+  implementedAt DateTime?
+  createdBy   String
+}
+model Notice {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  type        NoticeType
+  subject     String
+  body        String
+  senderId    String
+  createdAt   DateTime @default(now())
+}
+model Activity {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  name        String
+  amount      Float
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+}
+model CostEntry {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  description String
+  amount      Float
+  entryDate   DateTime
+}
+enum Role { CONTRACTOR CLIENT_PM ADMIN }
+enum ContractType { NEC3 NEC4 }
+enum MainOption { A C E }
+enum NoticeType { EARLY_WARNING COMPENSATION_EVENT GENERAL }
+enum EWStatus { OPEN DISCUSSED CLOSED }
+enum CEStatus { NOTIFIED QUOTED ACCEPTED REJECTED IMPLEMENTED }
+enum CEDecision { ACCEPTED REJECTED MORE_INFO }
